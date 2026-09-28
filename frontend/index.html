@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrAI — Truth Infrastructure & Live Fact-Checking Platform</title>
+  <meta name="description" content="Enterprise B2B Trust-as-a-Service engine for real-time live video transcription fact-checking, AI hallucination auditing, and propaganda stripping.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="logo-mark">TrAI</div>
+        <div>
+          <h1 class="logo-title">TrAI Platform</h1>
+          <span class="logo-subtitle">Enterprise Trust & Real-Time Verification Engine</span>
+        </div>
+      </div>
+      <div class="engine-badge">
+        <span class="status-pulse"></span>
+        <span id="backend-status-text">Backend: Initializing / Ready</span>
+        <span class="pill-chip">Grok-2 + Gemini 1.5</span>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="live-stream-tab">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+        Live Video / Speech Fact-Checker
+      </button>
+      <button class="tab-btn" data-tab="ai-glitch-tab">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        AI Glitch & Hallucination Auditor
+      </button>
+      <button class="tab-btn" data-tab="news-normalizer-tab">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        News Propaganda Stripper
+      </button>
+      <button class="tab-btn" data-tab="source-trust-tab">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Source Trust Index
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+
+      <!-- TAB 1: Live Video / Speech Fact-Checker -->
+      <section id="live-stream-tab" class="tab-pane active">
+        <div class="pane-grid">
+          <div class="card control-card">
+            <div class="card-header">
+              <h2>Live Spoken Statement Stream</h2>
+              <span class="badge badge-live">LIVE INGESTION</span>
+            </div>
+            <p class="description">
+              Simulates a live broadcast audio/video transcription plugin (e.g. presidential debates, press conferences, live speeches). Audits factual accuracy against verified economic, legal, and historical databases.
+            </p>
+
+            <div class="preset-group">
+              <label>Preset Live Scenarios:</label>
+              <div class="chips-container">
+                <button type="button" class="preset-chip" onclick="loadSpeechPreset('trump')">Donald Trump (Economic Claim)</button>
+                <button type="button" class="preset-chip" onclick="loadSpeechPreset('debate')">Debate Claim (Healthcare Bill)</button>
+                <button type="button" class="preset-chip" onclick="loadSpeechPreset('general')">Breaking News Speech</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="speaker-input">Speaker / Public Figure:</label>
+              <input type="text" id="speaker-input" class="form-control" value="Donald Trump" placeholder="e.g. Donald Trump, Kamala Harris, Fed Chair...">
+            </div>
+
+            <div class="form-group">
+              <label for="media-source-input">Media / Video Stream Feed:</label>
+              <input type="text" id="media-source-input" class="form-control" value="Live Campaign Rally / C-SPAN Stream">
+            </div>
+
+            <div class="form-group">
+              <label for="statement-input">Spoken Statement / Transcript Chunk:</label>
+              <textarea id="statement-input" class="form-control" rows="4" placeholder="Enter or paste transcribed spoken segment...">We put 25 percent tariffs on foreign steel, and our inflation completely disappeared to zero, creating 100 percent of the manufacturing jobs.</textarea>
+            </div>
+
+            <div class="action-bar">
+              <button id="btn-verify-live" class="btn btn-primary" onclick="verifyLiveStatement()">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Audit Live Statement
+              </button>
+              <button class="btn btn-secondary" onclick="simulateStreamChunk()">
+                Simulate Next Live Chunk
+              </button>
+            </div>
+          </div>
+
+          <div class="card result-card">
+            <div class="card-header">
+              <h2>Real-Time Fact-Check Verdict</h2>
+              <span id="live-verdict-pill" class="badge badge-unverified">AWAITING INPUT</span>
+            </div>
+            <div id="live-result-content" class="result-body empty-state">
+              <div class="empty-icon">&#9878;</div>
+              <p>Submit a spoken statement or select a preset to view live consensus verification and fact citations.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: AI Glitch & Hallucination Auditor -->
+      <section id="ai-glitch-tab" class="tab-pane">
+        <div class="pane-grid">
+          <div class="card control-card">
+            <div class="card-header">
+              <h2>AI Output Truth Guardrail</h2>
+              <span class="badge badge-ai">GLITCH AUDITOR</span>
+            </div>
+            <p class="description">
+              Protects enterprise businesses against LLM hallucinations, fabricated citations, and AI logic bugs before publishing or acting on AI responses.
+            </p>
+
+            <div class="preset-group">
+              <label>Preset AI Glitch Test Cases:</label>
+              <div class="chips-container">
+                <button type="button" class="preset-chip" onclick="loadAiPreset('hallucination')">Fabricated Treaty Citation</button>
+                <button type="button" class="preset-chip" onclick="loadAiPreset('accurate')">Accurate Historical Fact</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="ai-prompt-input">User / Business Prompt:</label>
+              <input type="text" id="ai-prompt-input" class="form-control" value="Who signed the 1997 Kyoto Protocol on behalf of the United States?">
+            </div>
+
+            <div class="form-group">
+              <label for="ai-response-input">AI Model Provided Response:</label>
+              <textarea id="ai-response-input" class="form-control" rows="5">The 1997 Kyoto Protocol was personally signed by President Bill Clinton in Geneva, and was unanimously ratified by the US Senate under Resolution 412 in 1998.</textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="ai-model-input">Target Model Name:</label>
+              <input type="text" id="ai-model-input" class="form-control" value="ChatGPT-4o / Internal LLM">
+            </div>
+
+            <button id="btn-verify-ai" class="btn btn-primary" onclick="verifyAiOutput()">
+              Audit for Glitches & Hallucinations
+            </button>
+          </div>
+
+          <div class="card result-card">
+            <div class="card-header">
+              <h2>Audit Report & Truth Score</h2>
+              <span id="ai-glitch-pill" class="badge badge-unverified">READY</span>
+            </div>
+            <div id="ai-result-content" class="result-body empty-state">
+              <div class="empty-icon">&#128269;</div>
+              <p>Run an audit to check whether the AI response is factual, inaccurate, or suffering a severe hallucination glitch.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: News Propaganda Stripper -->
+      <section id="news-normalizer-tab" class="tab-pane">
+        <div class="pane-grid">
+          <div class="card control-card">
+            <div class="card-header">
+              <h2>News Normalization & De-Propaganda</h2>
+              <span class="badge badge-news">COLD ANALYTICS</span>
+            </div>
+            <p class="description">
+              Extracts pure empirical facts (who, what, when, where) while stripping sensational adjectives, state-sponsored narratives, and emotional appeals.
+            </p>
+
+            <div class="form-group">
+              <label for="news-source-input">Source Outlet Name:</label>
+              <input type="text" id="news-source-input" class="form-control" value="State Media / Aggregator">
+            </div>
+
+            <div class="form-group">
+              <label for="news-text-input">Raw Scraped Article / Report:</label>
+              <textarea id="news-text-input" class="form-control" rows="7">In a cowardly and unprovoked display of hostility, hostile forces were utterly annihilated today by our heroic defense battalions, while corrupt western puppets suffered catastrophic defeats across the entire contested sector.</textarea>
+            </div>
+
+            <button id="btn-verify-news" class="btn btn-primary" onclick="verifyNewsText()">
+              Strip Propaganda & Extract Facts
+            </button>
+          </div>
+
+          <div class="card result-card">
+            <div class="card-header">
+              <h2>Radically Neutral Report</h2>
+              <span id="news-verdict-pill" class="badge badge-unverified">RAW</span>
+            </div>
+            <div id="news-result-content" class="result-body empty-state">
+              <div class="empty-icon">&#128220;</div>
+              <p>Submit raw news text to view the normalized, unbiased factual report.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: Source Trust Index -->
+      <section id="source-trust-tab" class="tab-pane">
+        <div class="card full-width-card">
+          <div class="card-header">
+            <div>
+              <h2>Global Source Trust Index</h2>
+              <p class="description">Algorithmic credibility, factual verification history, and bias deviation scoring across major media organizations.</p>
+            </div>
+            <button class="btn btn-secondary" onclick="loadSourceScores()">Refresh Scores</button>
+          </div>
+          <div class="table-container">
+            <table class="trust-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Source Outlet</th>
+                  <th>Domain</th>
+                  <th>Credibility Score</th>
+                  <th>Verification Tier</th>
+                  <th>Monitoring Status</th>
+                </tr>
+              </thead>
+              <tbody id="source-scores-tbody">
+                <tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading trust indexes...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-info">
+        <span>TrAI Enterprise Platform &copy; 2026</span>
+        <span>•</span>
+        <span>Trust-as-a-Service (TaaS) Architecture</span>
+        <span>•</span>
+        <span>Powered by LangChain4j, Spring Boot 4, xAI Grok & Vertex AI Gemini</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
