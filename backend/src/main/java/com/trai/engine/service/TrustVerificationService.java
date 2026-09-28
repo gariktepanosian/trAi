@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class TrustVerificationService {
@@ -40,6 +41,7 @@ public class TrustVerificationService {
     private final AuditLogService auditLogService;
     private final PredictiveAnalyticsService predictiveAnalyticsService;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final AtomicBoolean killSwitchActive = new AtomicBoolean(false);
 
     public TrustVerificationService(AntiPropagandaEngine antiPropagandaEngine,
                                     LiveFactCheckEngine liveFactCheckEngine,
@@ -65,6 +67,10 @@ public class TrustVerificationService {
     public Map<String, Object> verifyLiveStatement(LiveStatementRequest req) {
         long start = System.currentTimeMillis();
         String speaker = (req.getSpeaker() != null && !req.getSpeaker().isBlank()) ? req.getSpeaker() : "Unknown Speaker";
+
+        if (killSwitchActive.get()) {
+            return haltedByKillSwitch("LIVE_FACT_CHECK");
+        }
 
         SanitizationResult sanitized = inputSanitizerService.sanitize(req.getStatement());
         if (sanitized.blocked()) {
@@ -112,6 +118,10 @@ public class TrustVerificationService {
      */
     public Map<String, Object> verifyAiGlitch(AiGlitchCheckRequest req) {
         long start = System.currentTimeMillis();
+        if (killSwitchActive.get()) {
+            return haltedByKillSwitch("AI_AUDIT");
+        }
+
         SanitizationResult sanitizedPrompt = inputSanitizerService.sanitize(req.getPrompt());
         SanitizationResult sanitizedResponse = inputSanitizerService.sanitize(req.getAiResponse());
         if (sanitizedPrompt.blocked() || sanitizedResponse.blocked()) {
@@ -158,6 +168,10 @@ public class TrustVerificationService {
     @Cacheable(value = "normalized-news", key = "#req.getText()?.hashCode()")
     public Map<String, Object> verifyNewsArticle(NewsVerificationRequest req) {
         long start = System.currentTimeMillis();
+        if (killSwitchActive.get()) {
+            return haltedByKillSwitch("NEWS_VERIFY");
+        }
+
         SanitizationResult sanitized = inputSanitizerService.sanitize(req.getText());
         if (sanitized.blocked()) {
             return blockedInputResponse("NEWS_VERIFY", sanitized);
@@ -209,6 +223,25 @@ public class TrustVerificationService {
      */
     public Map<String, Object> predictMarketImpact(String eventSummary) {
         return predictiveAnalyticsService.predictImpact(eventSummary);
+    }
+
+    public boolean isKillSwitchActive() {
+        return killSwitchActive.get();
+    }
+
+    public boolean setKillSwitch(boolean active) {
+        killSwitchActive.set(active);
+        log.warn("SentinelMind Kill-Switch toggled to: {}", active);
+        return active;
+    }
+
+    private Map<String, Object> haltedByKillSwitch(String actionType) {
+        auditLogService.record(currentActor(), actionType, "SYSTEM_HALTED", "KILL_SWITCH_ACTIVE", null, List.of("SENTINEL_KILL_SWITCH"), true, 0L);
+        return Map.of(
+                "status", "HALTED",
+                "killSwitchActive", true,
+                "reason", "SentinelMind Emergency Kill Switch is ACTIVE. AI model evaluation suspended by platform administrator."
+        );
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────

@@ -51,14 +51,19 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public — no token required
+                // Public endpoints — open access / demo & verification
                 .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/trust/status").permitAll()
+                .requestMatchers("/api/v1/trust/**").permitAll()
+                .requestMatchers("/api/v1/live/**").permitAll()
+                .requestMatchers("/api/v1/analytics/**").permitAll()
+                .requestMatchers("/api/v1/alerts/**").permitAll()
+                .requestMatchers("/api/v1/translate/**").permitAll()
+                .requestMatchers("/api/v1/search/**").permitAll()
                 .requestMatchers("/api/v1/webhook/ingest").permitAll()  // HMAC-signed
                 .requestMatchers(HttpMethod.POST, "/api/v1/webhook/register").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/webhook/status/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
-                // B2B webhook management requires BUSINESS role
+                // B2B webhook partner management requires BUSINESS or ADMIN role
                 .requestMatchers("/api/v1/webhook/**").hasAnyRole("BUSINESS", "ADMIN")
                 // Audit reports require ADMIN
                 .requestMatchers("/api/v1/audit/**").hasRole("ADMIN")

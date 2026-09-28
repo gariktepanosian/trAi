@@ -21,12 +21,32 @@
           <span class="logo-subtitle">Enterprise Trust & Real-Time Verification Engine</span>
         </div>
       </div>
-      <div class="engine-badge">
-        <span class="status-pulse"></span>
-        <span id="backend-status-text">Backend: Initializing / Ready</span>
-        <span class="pill-chip">Grok-2 + Gemini 1.5</span>
+      <div class="navbar-actions">
+        <div class="engine-badge">
+          <span class="status-pulse"></span>
+          <span id="backend-status-text">Backend: Initializing / Ready</span>
+          <span class="pill-chip">Grok-2 + Gemini 1.5</span>
+        </div>
+        <div id="auth-actions" class="auth-box">
+          <button id="open-auth-btn" class="btn btn-sm btn-primary" onclick="openAuthModal()">Sign In</button>
+          <div id="user-profile-badge" class="user-badge" style="display:none;">
+            <span id="user-display-name">investigator</span>
+            <button class="btn btn-xs btn-outline" onclick="logoutUser()">Logout</button>
+          </div>
+        </div>
       </div>
     </header>
+
+    <!-- SentinelMind Emergency Kill Switch Banner -->
+    <div id="sentinel-killswitch-banner" class="killswitch-banner normal">
+      <div class="killswitch-info">
+        <span class="killswitch-status-dot"></span>
+        <span id="killswitch-text">SentinelMind: Active & Enforcing Real-time Guardrails</span>
+      </div>
+      <button id="killswitch-toggle-btn" class="btn btn-outline-danger" onclick="toggleSentinelKillSwitch()">
+        Engage Kill-Switch
+      </button>
+    </div>
 
     <!-- Navigation Tabs -->
     <nav class="nav-tabs">
@@ -46,9 +66,25 @@
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         Source Trust Index
       </button>
+      <button class="tab-btn" data-tab="market-impact-tab">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Market Impact Analytics
+      </button>
       <button class="tab-btn" data-tab="webhook-dashboard-tab">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/><circle cx="12" cy="12" r="10"/></svg>
         Webhook Dashboard
+      </button>
+      <button class="tab-btn" data-tab="alerts-center-tab">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Incident Alerts
+      </button>
+      <button class="tab-btn" data-tab="translation-tab">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Multi-Language Feeds
+      </button>
+      <button class="tab-btn" data-tab="pipeline-builder-tab">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/><rect x="9" y="16" width="6" height="6" rx="1"/><path d="M5 8v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><line x1="12" y1="13" x2="12" y2="16"/></svg>
+        Pipeline Topology
       </button>
     </nav>
 
@@ -281,6 +317,175 @@
       </div>
     </section>
 
+    <!-- TAB 6: Market Impact Analytics -->
+    <section id="market-impact-tab" class="tab-pane">
+      <div class="pane-grid">
+        <!-- Input Column -->
+        <div class="card glass-card">
+          <div class="card-header">
+            <h2>Algorithmic Market Impact Engine</h2>
+            <span class="badge badge-unverified">Macro Prediction</span>
+          </div>
+          <p class="description">
+            Evaluates verified real-world breaking events to forecast immediate volatility and directional pressure across commodities, crypto, and fiat.
+          </p>
+
+          <div class="form-group">
+            <label for="market-event-input">Verified Event Summary</label>
+            <textarea id="market-event-input" class="form-control" rows="5" placeholder="E.g., OPEC+ announces surprise 1.8M barrel/day production cut starting next month due to geopolitical shipping tensions in Strait of Hormuz..."></textarea>
+          </div>
+
+          <div class="quick-presets" style="margin-bottom: 1.25rem;">
+            <span style="font-size: 0.78rem; color: #94a3b8; margin-right: 0.5rem;">Presets:</span>
+            <button class="btn btn-xs btn-outline" onclick="setMarketPreset('opec')">OPEC Cut</button>
+            <button class="btn btn-xs btn-outline" onclick="setMarketPreset('fed')">Fed Rate Hike</button>
+            <button class="btn btn-xs btn-outline" onclick="setMarketPreset('peace')">Ceasefire Deal</button>
+          </div>
+
+          <button class="btn btn-primary" onclick="predictMarketImpactAction()">
+            Calculate Market Impact Forecast
+          </button>
+        </div>
+
+        <!-- Output Column -->
+        <div class="card glass-card result-panel">
+          <div class="card-header">
+            <h2>Impact Volatility Projection</h2>
+            <div id="market-impact-pill" class="badge badge-unverified">AWAITING INPUT</div>
+          </div>
+
+          <div id="market-impact-content" class="result-body">
+            <div class="empty-state">
+              <div class="empty-icon">&#128200;</div>
+              <p>Enter an event summary or select a preset to generate algorithmic forecasts for Gold, Bitcoin, Oil, and USD.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 7: Incident & Alert Center -->
+    <section id="alerts-center-tab" class="tab-pane">
+      <div class="card glass-card">
+        <div class="card-header">
+          <div>
+            <h2>Real-Time Security & Fact Incident Center</h2>
+            <p class="description">Live security gateway alerts, prompt injection intercepts, low-trust claim warnings, and kill switch audits.</p>
+          </div>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <button class="btn btn-xs btn-outline" onclick="loadAlerts('ALL')">All</button>
+            <button class="btn btn-xs btn-outline" onclick="loadAlerts('CRITICAL')">Critical</button>
+            <button class="btn btn-xs btn-outline" onclick="loadAlerts('UNRESOLVED')">Unresolved</button>
+            <button class="btn btn-sm btn-primary" onclick="loadAlerts()">Refresh Feed</button>
+          </div>
+        </div>
+
+        <div id="alerts-list-container" class="alert-feed">
+          <div class="empty-state"><div class="empty-icon">&#8987;</div><p>Loading real-time incident stream...</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 8: Multi-Language Intelligence -->
+    <section id="translation-tab" class="tab-pane">
+      <div class="card glass-card">
+        <div class="card-header">
+          <div>
+            <h2>Multi-Language Truth Intelligence Pipeline</h2>
+            <p class="description">Cross-lingual truth verification and real-time localized reporting in English (EN), Russian (RU), and Armenian (HY).</p>
+          </div>
+          <div class="lang-selector-group">
+            <button class="btn btn-sm btn-outline active" id="btn-lang-ru" onclick="setTargetLang('ru')">Russian (RU)</button>
+            <button class="btn btn-sm btn-outline" id="btn-lang-hy" onclick="setTargetLang('hy')">Armenian (HY)</button>
+            <button class="btn btn-sm btn-outline" id="btn-lang-en" onclick="setTargetLang('en')">English (EN)</button>
+          </div>
+        </div>
+
+        <div class="translation-grid">
+          <div>
+            <label for="translate-input">Original Truth Feed / Claim</label>
+            <textarea id="translate-input" class="form-control" rows="8" placeholder="Paste verified claim or news summary to generate cross-language localized truth feed..."></textarea>
+            <button class="btn btn-primary" style="margin-top: 1rem;" onclick="runTranslationAction()">Translate & Localize Feed</button>
+          </div>
+          <div>
+            <label>Localized Consensus Feed</label>
+            <div id="translate-output" class="analysis-text-box" style="min-height: 200px;">
+              <span style="color: #64748b;">Localized output will appear here with semantic verification anchors...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 9: Visual Pipeline Topology Builder -->
+    <section id="pipeline-builder-tab" class="tab-pane">
+      <div class="card glass-card">
+        <div class="card-header">
+          <div>
+            <h2>TrAI Visual Pipeline Topology Flow</h2>
+            <p class="description">Interactive n8n-style node graph illustrating real-time data ingress, sanitization filters, dual LLM consensus engines, and output guardrails.</p>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="triggerPipelineSimulation()">Test Run Pipeline Simulation</button>
+        </div>
+
+        <div class="pipeline-canvas">
+          <div class="pipeline-nodes-wrapper">
+            <!-- Node 1: Ingest -->
+            <div class="pipeline-node" onclick="inspectNode('ingest')">
+              <div class="node-icon-circle">&#128225;</div>
+              <div class="node-title">1. Ingest Inflow</div>
+              <div class="node-desc">Live Audio / Scraper / B2B Webhook</div>
+              <span class="node-tag">HTTP / HMAC</span>
+            </div>
+
+            <div class="pipeline-connector"><div class="pipeline-anim-pulse"></div></div>
+
+            <!-- Node 2: Sanitizer -->
+            <div class="pipeline-node" onclick="inspectNode('sanitizer')">
+              <div class="node-icon-circle">&#128737;</div>
+              <div class="node-title">2. Input Sanitizer</div>
+              <div class="node-desc">PII Masking & Prompt Injection Filter</div>
+              <span class="node-tag">REGEX / JSOUP</span>
+            </div>
+
+            <div class="pipeline-connector"><div class="pipeline-anim-pulse" style="animation-delay: 0.6s;"></div></div>
+
+            <!-- Node 3: AI Engine -->
+            <div class="pipeline-node" onclick="inspectNode('ai-engine')">
+              <div class="node-icon-circle">&#9889;</div>
+              <div class="node-title">3. AI Consensus</div>
+              <div class="node-desc">xAI Grok-2 + Vertex Gemini 1.5</div>
+              <span class="node-tag">LANGCHAIN4J</span>
+            </div>
+
+            <div class="pipeline-connector"><div class="pipeline-anim-pulse" style="animation-delay: 1.2s;"></div></div>
+
+            <!-- Node 4: Guardrail -->
+            <div class="pipeline-node" onclick="inspectNode('guardrails')">
+              <div class="node-icon-circle">&#128680;</div>
+              <div class="node-title">4. SentinelMind</div>
+              <div class="node-desc">Output Guardrails & Kill Switch</div>
+              <span class="node-tag">POLICIES</span>
+            </div>
+
+            <div class="pipeline-connector"><div class="pipeline-anim-pulse" style="animation-delay: 1.8s;"></div></div>
+
+            <!-- Node 5: Egress -->
+            <div class="pipeline-node" onclick="inspectNode('egress')">
+              <div class="node-icon-circle">&#128190;</div>
+              <div class="node-title">5. Vault & Dispatch</div>
+              <div class="node-desc">MongoDB, Redis Cache, B2B Webhook</div>
+              <span class="node-tag">CACHE / REPO</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="pipeline-node-inspector" class="analysis-text-box" style="margin-top: 1.25rem;">
+          <strong>Interactive Node Inspector:</strong> Click on any pipeline node above to inspect its live latency, pass-through metrics, and security policies.
+        </div>
+      </div>
+    </section>
+
     <!-- Footer -->
     <footer class="footer">
       <div class="footer-info">
@@ -291,6 +496,44 @@
         <span>Powered by LangChain4j, Spring Boot 4, xAI Grok & Vertex AI Gemini</span>
       </div>
     </footer>
+  </div>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="modal-overlay" style="display:none;" onclick="handleModalBackdropClick(event)">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="auth-modal-title">Sign In to TrAI</h2>
+        <button class="modal-close-btn" onclick="closeAuthModal()">&times;</button>
+      </div>
+      <div class="auth-tabs">
+        <button id="auth-tab-login" class="auth-tab-btn active" onclick="switchAuthMode('login')">Sign In</button>
+        <button id="auth-tab-register" class="auth-tab-btn" onclick="switchAuthMode('register')">Create Account</button>
+      </div>
+      <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+        <div class="form-group">
+          <label for="auth-username">Username</label>
+          <input type="text" id="auth-username" class="form-control" required placeholder="investigator1">
+        </div>
+        <div class="form-group" id="auth-email-group" style="display:none;">
+          <label for="auth-email">Email</label>
+          <input type="email" id="auth-email" class="form-control" placeholder="analyst@domain.com">
+        </div>
+        <div class="form-group">
+          <label for="auth-password">Password</label>
+          <input type="password" id="auth-password" class="form-control" required placeholder="••••••••">
+        </div>
+        <div class="form-group" id="auth-role-group" style="display:none;">
+          <label for="auth-role">Account Type</label>
+          <select id="auth-role" class="form-control">
+            <option value="USER">Standard Auditor</option>
+            <option value="BUSINESS">Enterprise Partner (B2B)</option>
+            <option value="ADMIN">System Administrator</option>
+          </select>
+        </div>
+        <div id="auth-error-msg" class="auth-error" style="display:none;"></div>
+        <button type="submit" id="auth-submit-btn" class="btn btn-primary" style="width:100%;">Sign In</button>
+      </form>
+    </div>
   </div>
 
   <script src="app.js"></script>

@@ -76,14 +76,40 @@ public class TrustEngineController {
     }
 
     /**
+     * Get SentinelMind Emergency Kill-Switch status.
+     */
+    @GetMapping("/trust/kill-switch")
+    public ResponseEntity<Map<String, Object>> getKillSwitchStatus() {
+        return ResponseEntity.ok(Map.of(
+                "active", trustVerificationService.isKillSwitchActive()
+        ));
+    }
+
+    /**
+     * Toggle SentinelMind Emergency Kill-Switch.
+     */
+    @PostMapping("/trust/kill-switch")
+    public ResponseEntity<Map<String, Object>> toggleKillSwitch(@RequestBody Map<String, Boolean> body) {
+        boolean active = body.getOrDefault("active", false);
+        boolean updated = trustVerificationService.setKillSwitch(active);
+        return ResponseEntity.ok(Map.of(
+                "active", updated,
+                "status", updated ? "KILL_SWITCH_ENGAGED" : "SYSTEM_NORMAL",
+                "message", updated ? "Emergency Kill-Switch is now ACTIVE. AI pipelines halted." : "Emergency Kill-Switch DISENGAGED. AI pipelines normal."
+        ));
+    }
+
+    /**
      * Platform status & engine capability diagnostic.
      */
     @GetMapping("/trust/status")
     public ResponseEntity<Map<String, Object>> getEngineStatus() {
+        boolean killActive = trustVerificationService.isKillSwitchActive();
         return ResponseEntity.ok(Map.of(
                 "application", "TrAI Trust Engine Platform",
                 "version", "0.0.1-SNAPSHOT",
-                "status", "OPERATIONAL",
+                "status", killActive ? "HALTED_BY_KILL_SWITCH" : "OPERATIONAL",
+                "killSwitchActive", killActive,
                 "features", List.of(
                         "Live Video/Speech Transcription Fact-Checking",
                         "AI Hallucination & Glitch Detection",
@@ -91,7 +117,8 @@ public class TrustEngineController {
                         "Propaganda & Double-Standard Stripping",
                         "Source Trust Scoring Index",
                         "B2B Webhook Gateway",
-                        "Predictive Market Impact Analytics"
+                        "Predictive Market Impact Analytics",
+                        "SentinelMind Emergency Kill Switch"
                 ),
                 "supportedModels", List.of("xAI Grok-2", "Google Vertex AI Gemini 1.5 Pro")
         ));
