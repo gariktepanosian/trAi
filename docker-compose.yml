@@ -1,22 +1,82 @@
 version: '3.8'
+
 services:
+
+  # ─── Infrastructure ──────────────────────────────────────────────────────────
+
   mongodb:
-    image: mongo:latest
+    image: mongo:7.0
     container_name: trai-mongo
     ports:
       - "27017:27017"
     restart: unless-stopped
     volumes:
       - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: trai
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
-    image: redis:latest
+    image: redis:7.2-alpine
     container_name: trai-redis
     ports:
       - "6379:6379"
     restart: unless-stopped
     volumes:
       - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ─── Application ─────────────────────────────────────────────────────────────
+
+  trai-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: trai-backend
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/trai
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      XAI_API_KEY: ${XAI_API_KEY}
+      GEMINI_PROJECT_ID: ${GEMINI_PROJECT_ID}
+      GEMINI_LOCATION: ${GEMINI_LOCATION:-us-central1}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/v1/trust/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  trai-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: trai-frontend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    depends_on:
+      - trai-backend
 
 volumes:
   mongodb_data:

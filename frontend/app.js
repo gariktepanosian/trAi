@@ -361,42 +361,42 @@ async function verifyNewsText() {
   pill.textContent = 'NORMALIZING...';
   resultCard.innerHTML = `<div class="empty-state"><div class="empty-icon">&#8987;</div><p>Deconstructing partisan adjectives and filtering emotional manipulation...</p></div>`;
 
-  setTimeout(() => {
-    pill.className = 'badge badge-true';
-    pill.textContent = 'NORMALIZED';
+  try {
+    const res = await fetch(`${API_BASE}/trust/verify-news`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, sourceName }),
+      signal: AbortSignal.timeout(6000)
+    });
 
-    resultCard.innerHTML = `
-      <div class="verdict-header-box">
-        <div>
-          <div style="font-size: 0.8rem; color: #94a3b8;">ORIGINAL SOURCE</div>
-          <div style="font-weight: 600; font-size: 1.1rem; color: #f8fafc;">${sourceName}</div>
-        </div>
-        <div style="text-align: right;">
-          <div class="verdict-score-label">Propaganda Stripped</div>
-          <div class="verdict-score-gauge" style="color: #06b6d4;">85%</div>
-        </div>
-      </div>
+    if (res.ok) {
+      const data = await res.json();
+      renderNewsResult(data);
+      return;
+    }
+    throw new Error('Backend error');
+  } catch (err) {
+    console.warn('Backend unavailable, falling back to local normalization:', err);
+  }
 
-      <div class="section-title">Radically Neutral Empirical Extraction</div>
-      <div class="analysis-text-box">
-        <strong>Objective Event:</strong> Military engagement reported in the contested sector resulting in equipment destruction and casualties.<br><br>
-        <strong>Eliminated Double Standards:</strong> Replaced emotional adjectives ("cowardly", "unprovoked", "heroic defense battalions", "corrupt western puppets", "annihilated") with factual, neutral descriptors ("opposing forces engaged", "units sustained heavy damage").
-      </div>
-
-      <div class="section-title">Corroborated Facts vs Unverified Claims</div>
-      <div class="claim-list">
-        <div class="claim-item verified">
-          <strong>[VERIFIED FACT]</strong> Clashes occurred along the designated northern boundary line at 04:30 UTC.
-        </div>
-        <div class="claim-item debunked">
-          <strong>[UNVERIFIED CLAIM]</strong> Claim that opposing forces were "completely annihilated" is unsubstantiated by satellite radar and independent observers.
-        </div>
-        <div class="claim-item warning">
-          <strong>[INSIDER STATUS - RED]</strong> Reports of sudden supply line disruption remain unverified pending official logistics confirmation.
-        </div>
-      </div>
-    `;
-  }, 400);
+  setTimeout(() => renderNewsResult({
+    sourceName,
+    normalizedReport: JSON.stringify({
+      normalized_title: 'Objective Report: Northern Sector Engagement',
+      verified_facts: [
+        'Engagement occurred at 04:30 UTC along the northern boundary line',
+        'Both sides reported equipment losses'
+      ],
+      unverified_claims: [
+        { source: 'State Media', claim: 'Opposition forces were annihilated' }
+      ],
+      insider_info: [ { status: 'RED', detail: 'Supply lines disrupted', potentialMarketImpact: 'Oil UP' } ],
+      propaganda_detected: true,
+      dry_analysis: 'Narrative emphasises total victory without corroboration.'
+    }),
+    guardrailFlags: ['FALLBACK_MODE'],
+    guardrailBlocked: false
+  }), 400);
 }
 
 // 4. Source Trust Scores
@@ -439,4 +439,112 @@ async function loadSourceScores() {
       </tr>
     `;
   }).join('');
+}
+
+function renderNewsResult(data) {
+  const pill = document.getElementById('news-verdict-pill');
+  const resultCard = document.getElementById('news-result-content');
+
+  pill.className = data.guardrailBlocked ? 'badge badge-false' : 'badge badge-true';
+  pill.textContent = data.guardrailBlocked ? 'BLOCKED' : 'NORMALIZED';
+
+  let parsed = {};
+  if (typeof data.normalizedReport === 'string') {
+    try {
+      parsed = JSON.parse(data.normalizedReport.replace(/```json/g, '').replace(/```/g, '').trim());
+    } catch (err) {
+      parsed = { rawText: data.normalizedReport };
+    }
+  } else if (data.normalizedReport) {
+    parsed = data.normalizedReport;
+  }
+
+  const verifiedFacts = (parsed.verified_facts || []).map(f => `<div class="claim-item verified">&#10004; ${f}</div>`).join('');
+  const unverifiedClaims = (parsed.unverified_claims || []).map(c => `
+    <div class="claim-item debunked">
+      <strong>[UNVERIFIED]</strong> ${c.claim || JSON.stringify(c)}
+    </div>
+  `).join('');
+
+  resultCard.innerHTML = `
+    <div class="verdict-header-box">
+      <div>
+        <div style="font-size: 0.8rem; color: #94a3b8;">ORIGINAL SOURCE</div>
+        <div style="font-weight: 600; font-size: 1.1rem; color: #f8fafc;">${data.sourceName || 'Unknown Source'}</div>
+      </div>
+      <div style="text-align: right;">
+        <div class="verdict-score-label">Propaganda Stripped</div>
+        <div class="verdict-score-gauge" style="color: #06b6d4;">${parsed.propaganda_detected ? 'Detected' : 'None'}</div>
+      </div>
+    </div>
+
+    <div class="section-title">Radically Neutral Extraction</div>
+    <div class="analysis-text-box">
+      <strong>Normalized Title:</strong> ${parsed.normalized_title || '—'}<br><br>
+      <strong>Dry Analysis:</strong> ${parsed.dry_analysis || 'Pending'}
+    </div>
+
+    <div class="section-title">Verified Facts</div>
+    ${verifiedFacts || '<div class="claim-item verified">No corroborated facts available.</div>'}
+
+    <div class="section-title">Unverified / Insider Claims</div>
+    ${unverifiedClaims || '<div class="claim-item warning">No unverified claims detected.</div>'}
+
+    ${data.guardrailFlags ? `<div class="analysis-text-box" style="margin-top:1rem;">Guardrail Flags: ${data.guardrailFlags.join(', ')}</div>` : ''}
+  `;
+}
+
+// ─── Webhook Dashboard ──────────────────────────────────────────────────────
+async function registerWebhookPartner() {
+  const resultBox = document.getElementById('webhook-register-result');
+  const companyName = document.getElementById('partner-company-input').value.trim();
+  const email = document.getElementById('partner-email-input').value.trim();
+  const callbackUrl = document.getElementById('partner-callback-input').value.trim();
+
+  if (!companyName || !email) {
+    resultBox.innerHTML = `<div class="claim-item warning">Company name and email are required.</div>`;
+    return;
+  }
+
+  resultBox.innerHTML = '<div class="claim-item verified">Registering partner...</div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/webhook/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ companyName, email, callbackUrl }),
+      signal: AbortSignal.timeout(5000)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Registration failed');
+    resultBox.innerHTML = `
+      <div class="analysis-text-box">
+        <strong>Partner ID:</strong> ${data.partnerId}<br>
+        <strong>Signing Secret:</strong> <code>${data.signingSecret}</code><br>
+        <em>Store this secret securely. It will not be shown again.</em>
+      </div>`;
+  } catch (err) {
+    resultBox.innerHTML = `<div class="claim-item debunked">${err.message}</div>`;
+  }
+}
+
+async function fetchWebhookStatus() {
+  const requestId = document.getElementById('webhook-request-id-input').value.trim();
+  const resultBox = document.getElementById('webhook-status-result');
+
+  if (!requestId) {
+    resultBox.innerHTML = `<div class="claim-item warning">Enter a request ID.</div>`;
+    return;
+  }
+
+  resultBox.innerHTML = '<div class="claim-item verified">Fetching status...</div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/webhook/status/${requestId}`, { signal: AbortSignal.timeout(4000) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Status lookup failed');
+    resultBox.innerHTML = `<pre class="analysis-text-box" style="white-space: pre-wrap;">${JSON.stringify(data, null, 2)}</pre>`;
+  } catch (err) {
+    resultBox.innerHTML = `<div class="claim-item debunked">${err.message}</div>`;
+  }
 }

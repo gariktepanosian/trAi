@@ -35,3 +35,15 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Secrets — NEVER COMMIT ####################################################
+.env
+*.env
+!.env.example
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Docker ###
+docker-compose.override.yml

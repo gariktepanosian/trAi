@@ -1,17 +1,26 @@
 package com.trai.engine.service;
 
-import com.trai.engine.ai.AntiPropagandaEngine;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trai.engine.ai.AiGlitchVerifierEngine;
+import com.trai.engine.ai.AntiPropagandaEngine;
 import com.trai.engine.ai.LiveFactCheckEngine;
-import com.trai.engine.domain.NormalizedNews;
+import com.trai.engine.analytics.PredictiveAnalyticsService;
+import com.trai.engine.audit.AuditLogService;
 import com.trai.engine.domain.SourceTrustScore;
 import com.trai.engine.dto.AiGlitchCheckRequest;
 import com.trai.engine.dto.LiveStatementRequest;
 import com.trai.engine.dto.NewsVerificationRequest;
-import com.trai.engine.repository.NormalizedNewsRepository;
+import com.trai.engine.guardrail.OutputGuardrailsService;
+import com.trai.engine.guardrail.OutputGuardrailsService.GuardrailResult;
 import com.trai.engine.repository.SourceTrustScoreRepository;
+import com.trai.engine.sanitizer.InputSanitizerService;
+import com.trai.engine.sanitizer.InputSanitizerService.SanitizationResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -25,101 +34,236 @@ public class TrustVerificationService {
     private final AntiPropagandaEngine antiPropagandaEngine;
     private final LiveFactCheckEngine liveFactCheckEngine;
     private final AiGlitchVerifierEngine aiGlitchVerifierEngine;
-    private final NormalizedNewsRepository newsRepository;
     private final SourceTrustScoreRepository trustScoreRepository;
+    private final InputSanitizerService inputSanitizerService;
+    private final OutputGuardrailsService outputGuardrailsService;
+    private final AuditLogService auditLogService;
+    private final PredictiveAnalyticsService predictiveAnalyticsService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public TrustVerificationService(
-            AntiPropagandaEngine antiPropagandaEngine,
-            LiveFactCheckEngine liveFactCheckEngine,
-            AiGlitchVerifierEngine aiGlitchVerifierEngine,
-            NormalizedNewsRepository newsRepository,
-            SourceTrustScoreRepository trustScoreRepository) {
+    public TrustVerificationService(AntiPropagandaEngine antiPropagandaEngine,
+                                    LiveFactCheckEngine liveFactCheckEngine,
+                                    AiGlitchVerifierEngine aiGlitchVerifierEngine,
+                                    SourceTrustScoreRepository trustScoreRepository,
+                                    InputSanitizerService inputSanitizerService,
+                                    OutputGuardrailsService outputGuardrailsService,
+                                    AuditLogService auditLogService,
+                                    PredictiveAnalyticsService predictiveAnalyticsService) {
         this.antiPropagandaEngine = antiPropagandaEngine;
         this.liveFactCheckEngine = liveFactCheckEngine;
         this.aiGlitchVerifierEngine = aiGlitchVerifierEngine;
-        this.newsRepository = newsRepository;
         this.trustScoreRepository = trustScoreRepository;
+        this.inputSanitizerService = inputSanitizerService;
+        this.outputGuardrailsService = outputGuardrailsService;
+        this.auditLogService = auditLogService;
+        this.predictiveAnalyticsService = predictiveAnalyticsService;
     }
 
     /**
-     * Live Video / Speech statement verification
+     * Live Video / Speech statement verification.
      */
     public Map<String, Object> verifyLiveStatement(LiveStatementRequest req) {
+        long start = System.currentTimeMillis();
         String speaker = (req.getSpeaker() != null && !req.getSpeaker().isBlank()) ? req.getSpeaker() : "Unknown Speaker";
-        String statement = req.getStatement() != null ? req.getStatement() : "";
+
+        SanitizationResult sanitized = inputSanitizerService.sanitize(req.getStatement());
+        if (sanitized.blocked()) {
+            return blockedInputResponse("LIVE_FACT_CHECK", sanitized);
+        }
+
+        Map<String, Object> result;
+        String analysisPayload;
 
         try {
-            log.info("Auditing live statement from [{}]: {}", speaker, statement);
-            String rawJson = liveFactCheckEngine.analyzeLiveTranscript(speaker, statement);
-            return Map.of(
+            log.info("Auditing live statement from [{}]", speaker);
+            analysisPayload = liveFactCheckEngine.analyzeLiveTranscript(speaker, sanitized.cleanText());
+            result = new LinkedHashMap<>(Map.of(
                     "status", "SUCCESS",
                     "mode", "LIVE_ENGINE",
                     "speaker", speaker,
                     "mediaSource", req.getMediaSource() != null ? req.getMediaSource() : "Live Audio Feed",
-                    "analysis", rawJson,
+                    "analysis", analysisPayload,
                     "timestamp", Instant.now().toString()
-            );
+            ));
         } catch (Exception e) {
-            log.warn("Live Fact Check API call failed or offline mode triggered: {}. Using simulated analytical verification.", e.getMessage());
-            return fallbackLiveFactCheck(speaker, statement, req.getMediaSource());
+            log.warn("Live Fact Check API unavailable. Using fallback. Cause: {}", e.getMessage());
+            result = fallbackLiveFactCheck(speaker, sanitized.cleanText(), req.getMediaSource());
+            analysisPayload = safeSerialize(result);
         }
+
+        int trustScore = extractNumericField(analysisPayload, "trustScore", (Integer) result.get("trustScore"), 60);
+        GuardrailResult guardrail = outputGuardrailsService.evaluate(analysisPayload, deriveRiskScore(trustScore));
+        result.put("guardrailFlags", guardrail.flags());
+        result.put("guardrailBlocked", guardrail.blocked());
+        if (guardrail.blocked()) {
+            result.put("analysis", guardrail.safeOutput());
+        }
+
+        auditLogService.record(currentActor(), "LIVE_FACT_CHECK", sanitized.cleanText(),
+                (String) result.getOrDefault("verdict", "UNKNOWN"), trustScore,
+                mergeFlags(sanitized.flags(), guardrail.flags()), guardrail.blocked(),
+                System.currentTimeMillis() - start);
+
+        return result;
     }
 
     /**
-     * AI Hallucination & Glitch Auditor
+     * AI Hallucination & Glitch Auditor.
      */
     public Map<String, Object> verifyAiGlitch(AiGlitchCheckRequest req) {
-        String prompt = req.getPrompt() != null ? req.getPrompt() : "";
-        String aiResponse = req.getAiResponse() != null ? req.getAiResponse() : "";
+        long start = System.currentTimeMillis();
+        SanitizationResult sanitizedPrompt = inputSanitizerService.sanitize(req.getPrompt());
+        SanitizationResult sanitizedResponse = inputSanitizerService.sanitize(req.getAiResponse());
+        if (sanitizedPrompt.blocked() || sanitizedResponse.blocked()) {
+            return blockedInputResponse("AI_AUDIT", sanitizedPrompt.blocked() ? sanitizedPrompt : sanitizedResponse);
+        }
 
+        Map<String, Object> result;
+        String auditPayload;
         try {
-            log.info("Auditing AI response for hallucinations (Model: {})", req.getModelName());
-            String auditResult = aiGlitchVerifierEngine.auditAiResponse(prompt, aiResponse);
-            return Map.of(
+            auditPayload = aiGlitchVerifierEngine.auditAiResponse(sanitizedPrompt.cleanText(), sanitizedResponse.cleanText());
+            result = new LinkedHashMap<>(Map.of(
                     "status", "SUCCESS",
                     "mode", "LIVE_AUDITOR",
                     "modelAudited", req.getModelName() != null ? req.getModelName() : "General LLM",
-                    "auditResult", auditResult,
+                    "auditResult", auditPayload,
                     "timestamp", Instant.now().toString()
-            );
+            ));
         } catch (Exception e) {
-            log.warn("AI Glitch engine call failed: {}. Falling back to rule-based verification heuristics.", e.getMessage());
-            return fallbackAiGlitchCheck(prompt, aiResponse, req.getModelName());
+            log.warn("AI Glitch engine unavailable. Using fallback. Cause: {}", e.getMessage());
+            result = fallbackAiGlitchCheck(sanitizedPrompt.cleanText(), sanitizedResponse.cleanText(), req.getModelName());
+            auditPayload = safeSerialize(result);
         }
+
+        int reliabilityScore = extractNumericField(auditPayload, "reliabilityScore", (Integer) result.get("reliabilityScore"), 80);
+        int riskScore = 100 - reliabilityScore;
+        GuardrailResult guardrail = outputGuardrailsService.evaluate(auditPayload, riskScore);
+        result.put("guardrailFlags", guardrail.flags());
+        result.put("guardrailBlocked", guardrail.blocked());
+        if (guardrail.blocked()) {
+            result.put("auditResult", guardrail.safeOutput());
+        }
+
+        auditLogService.record(currentActor(), "AI_AUDIT", sanitizedPrompt.cleanText(),
+                (String) result.getOrDefault("verdictSummary", "AI_AUDIT"), reliabilityScore,
+                mergeFlags(mergeFlags(sanitizedPrompt.flags(), sanitizedResponse.flags()), guardrail.flags()),
+                guardrail.blocked(), System.currentTimeMillis() - start);
+
+        return result;
     }
 
     /**
-     * Normalizes and strips propaganda from news articles
+     * Normalizes and strips propaganda from news articles.
      */
+    @Cacheable(value = "normalized-news", key = "#req.getText()?.hashCode()")
     public Map<String, Object> verifyNewsArticle(NewsVerificationRequest req) {
+        long start = System.currentTimeMillis();
+        SanitizationResult sanitized = inputSanitizerService.sanitize(req.getText());
+        if (sanitized.blocked()) {
+            return blockedInputResponse("NEWS_VERIFY", sanitized);
+        }
+
+        Map<String, Object> result;
+        String normalized;
         try {
-            String cleanReport = antiPropagandaEngine.normalizeNewsData(req.getText());
-            return Map.of(
+            normalized = antiPropagandaEngine.normalizeNewsData(sanitized.cleanText());
+            result = new LinkedHashMap<>(Map.of(
                     "status", "SUCCESS",
                     "sourceUrl", req.getSourceUrl() != null ? req.getSourceUrl() : "direct_input",
                     "sourceName", req.getSourceName() != null ? req.getSourceName() : "External Source",
-                    "normalizedReport", cleanReport,
+                    "normalizedReport", normalized,
                     "timestamp", Instant.now().toString()
-            );
+            ));
         } catch (Exception e) {
-            log.warn("Anti-propaganda engine call failed: {}. Using heuristic normalization.", e.getMessage());
-            return fallbackNewsNormalization(req.getText(), req.getSourceName());
+            log.warn("Normalization engine unavailable. Using fallback. Cause: {}", e.getMessage());
+            result = fallbackNewsNormalization(sanitized.cleanText(), req.getSourceName());
+            normalized = safeSerialize(result);
         }
+
+        GuardrailResult guardrail = outputGuardrailsService.evaluate(normalized, 0);
+        result.put("guardrailFlags", guardrail.flags());
+        result.put("guardrailBlocked", guardrail.blocked());
+        if (guardrail.blocked()) {
+            result.put("normalizedReport", guardrail.safeOutput());
+        }
+
+        auditLogService.record(currentActor(), "NEWS_VERIFY", sanitized.cleanText(),
+                "NEWS_NORMALIZED", null,
+                mergeFlags(sanitized.flags(), guardrail.flags()), guardrail.blocked(),
+                System.currentTimeMillis() - start);
+
+        return result;
     }
 
     /**
-     * Retrieves or initialises source credibility rankings
+     * Cached source trust score list.
      */
+    @Cacheable("source-trust-scores")
     public List<SourceTrustScore> getSourceTrustScores() {
+        List<SourceTrustScore> scores = trustScoreRepository.findAll();
+        return scores.isEmpty() ? seedDefaultTrustScores() : scores;
+    }
+
+    /**
+     * Predict short-term market impact of an event summary.
+     */
+    public Map<String, Object> predictMarketImpact(String eventSummary) {
+        return predictiveAnalyticsService.predictImpact(eventSummary);
+    }
+
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    private Map<String, Object> blockedInputResponse(String actionType, SanitizationResult result) {
+        auditLogService.record(currentActor(), actionType, result.cleanText(),
+                "BLOCKED_INPUT", null, result.flags(), true, 0L);
+        return Map.of(
+                "status", "BLOCKED",
+                "reason", "Input was flagged by TrAI sanitizer",
+                "flags", result.flags()
+        );
+    }
+
+    private String safeSerialize(Object value) {
         try {
-            List<SourceTrustScore> scores = trustScoreRepository.findAll();
-            if (scores.isEmpty()) {
-                return seedDefaultTrustScores();
-            }
-            return scores;
+            return objectMapper.writeValueAsString(value);
         } catch (Exception e) {
-            return seedDefaultTrustScores();
+            return String.valueOf(value);
         }
+    }
+
+    private String currentActor() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()) {
+            return auth.getName();
+        }
+        return "anonymous";
+    }
+
+    private List<String> mergeFlags(List<String> a, List<String> b) {
+        List<String> merged = new ArrayList<>();
+        if (a != null) merged.addAll(a);
+        if (b != null) merged.addAll(b);
+        return merged;
+    }
+
+    private int extractNumericField(String json, String fieldName, Integer fallback, int defaultValue) {
+        if (json != null) {
+            try {
+                JsonNode node = objectMapper.readTree(json);
+                if (node.has(fieldName)) {
+                    return node.get(fieldName).asInt(defaultValue);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        if (fallback != null) {
+            return fallback;
+        }
+        return defaultValue;
+    }
+
+    private int deriveRiskScore(int trustScore) {
+        return Math.max(0, Math.min(100, 100 - trustScore));
     }
 
     private List<SourceTrustScore> seedDefaultTrustScores() {
@@ -177,17 +321,17 @@ public class TrustVerificationService {
         if (lower.contains("tariffs") || lower.contains("inflation") || lower.contains("economy") || lower.contains("billion") || lower.contains("million")) {
             verdict = "MISLEADING";
             trustScore = 42;
-            explanation = "Macroeconomic claim mixes actual policy intentions with disputed causal impact metrics. Official Bureau of Labor Statistics and CBO benchmarks show differing historical baseline data.";
+            explanation = "Macroeconomic claim mixes actual policy intentions with disputed metrics.";
         } else if (lower.contains("never happened") || lower.contains("100%") || lower.contains("zero crime") || lower.contains("stolen")) {
             verdict = "FALSE";
             trustScore = 18;
-            explanation = "Direct empirical contradiction: Census bureau, peer-reviewed records, and legal certifications refute absolute claims of this nature.";
+            explanation = "Empirical contradiction vs census/legal records.";
         } else if (lower.contains("passed the bill") || lower.contains("signed executive order") || lower.contains("met in")) {
             verdict = "VERIFIED_TRUE";
             trustScore = 96;
-            explanation = "Corroborated by congressional records, government archives, and multiple institutional press agencies.";
+            explanation = "Corroborated by congressional / archival records.";
         } else {
-            explanation = "Subjective rhetoric detected. Insufficient empirical anchors to establish definitive fact or falsehood without further specific data points.";
+            explanation = "Insufficient empirical anchors to determine truthfulness.";
         }
 
         Map<String, Object> res = new LinkedHashMap<>();
@@ -207,14 +351,14 @@ public class TrustVerificationService {
     private Map<String, Object> fallbackAiGlitchCheck(String prompt, String aiResponse, String modelName) {
         Map<String, Object> res = new LinkedHashMap<>();
         boolean suspicious = aiResponse.contains("According to recent studies in 2026") ||
-                             aiResponse.length() > 500 && !aiResponse.contains(".");
+                (aiResponse.length() > 500 && !aiResponse.contains("."));
         res.put("status", "SUCCESS");
         res.put("mode", "STANDALONE_FALLBACK_AUDITOR");
         res.put("modelAudited", modelName != null ? modelName : "Unknown LLM");
         res.put("isGlitchDetected", suspicious);
         res.put("glitchSeverity", suspicious ? "MODERATE" : "LOW");
         res.put("reliabilityScore", suspicious ? 62 : 91);
-        res.put("verdictSummary", suspicious ? "Potential hallucination or citation glitch detected in LLM response." : "AI response appears coherent and logically sound.");
+        res.put("verdictSummary", suspicious ? "Potential hallucination detected." : "AI response appears coherent.");
         res.put("safeToPublish", !suspicious);
         res.put("timestamp", Instant.now().toString());
         return res;
@@ -226,7 +370,7 @@ public class TrustVerificationService {
         res.put("mode", "STANDALONE_FALLBACK_NORMALIZATION");
         res.put("sourceName", sourceName != null ? sourceName : "Direct Input");
         res.put("originalLength", text != null ? text.length() : 0);
-        res.put("normalizedSummary", "Extracted factual essence while stripping emotional terminology and hyperbolic adjectives.");
+        res.put("normalizedSummary", "Extracted factual essence while stripping emotional terminology.");
         res.put("propagandaScore", 35);
         res.put("timestamp", Instant.now().toString());
         return res;

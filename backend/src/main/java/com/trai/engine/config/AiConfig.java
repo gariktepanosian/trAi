@@ -6,6 +6,7 @@ import dev.langchain4j.service.AiServices;
 import com.trai.engine.ai.AntiPropagandaEngine;
 import com.trai.engine.ai.LiveFactCheckEngine;
 import com.trai.engine.ai.AiGlitchVerifierEngine;
+import com.trai.engine.analytics.MarketImpactEngine;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,4 +47,12 @@ public class AiConfig {
                 .chatLanguageModel(grokModel)
                 .build();
     }
+
+    @Bean
+    public MarketImpactEngine marketImpactEngine(ChatLanguageModel grokModel) {
+        return AiServices.builder(MarketImpactEngine.class)
+                .chatLanguageModel(grokModel)
+                .build();
+    }
 }
+

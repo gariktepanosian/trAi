@@ -46,6 +46,10 @@
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         Source Trust Index
       </button>
+      <button class="tab-btn" data-tab="webhook-dashboard-tab">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/><circle cx="12" cy="12" r="10"/></svg>
+        Webhook Dashboard
+      </button>
     </nav>
 
     <!-- Main Content Area -->
@@ -235,6 +239,47 @@
       </section>
 
     </main>
+
+    <!-- TAB 5: Webhook Dashboard -->
+    <section id="webhook-dashboard-tab" class="tab-pane">
+      <div class="pane-grid">
+        <div class="card control-card">
+          <div class="card-header">
+            <h2>B2B Partner Registration</h2>
+            <span class="badge badge-ai">HMAC + JWT</span>
+          </div>
+          <p class="description">Register a webhook partner to obtain a signing secret. Use this to send signed POST requests to `/api/v1/webhook/ingest`.</p>
+          <div class="form-group">
+            <label for="partner-company-input">Company Name</label>
+            <input type="text" id="partner-company-input" class="form-control" placeholder="Acme Media Group">
+          </div>
+          <div class="form-group">
+            <label for="partner-email-input">Contact Email</label>
+            <input type="email" id="partner-email-input" class="form-control" placeholder="secops@acme.com">
+          </div>
+          <div class="form-group">
+            <label for="partner-callback-input">Callback URL (optional)</label>
+            <input type="text" id="partner-callback-input" class="form-control" placeholder="https://acme.com/trai-callback">
+          </div>
+          <button class="btn btn-primary" onclick="registerWebhookPartner()">Register Partner</button>
+          <div id="webhook-register-result" class="result-body" style="margin-top:1rem;"></div>
+        </div>
+
+        <div class="card result-card">
+          <div class="card-header">
+            <h2>Webhook Request Status</h2>
+            <span class="badge badge-news">Real-Time</span>
+          </div>
+          <p class="description">Enter a `requestId` returned by `/webhook/ingest` to track processing progress.</p>
+          <div class="form-group">
+            <label for="webhook-request-id-input">Request ID</label>
+            <input type="text" id="webhook-request-id-input" class="form-control" placeholder="6530d5a2c0...">
+          </div>
+          <button class="btn btn-secondary" onclick="fetchWebhookStatus()">Fetch Status</button>
+          <div id="webhook-status-result" class="result-body" style="margin-top:1rem;"></div>
+        </div>
+      </div>
+    </section>
 
     <!-- Footer -->
     <footer class="footer">

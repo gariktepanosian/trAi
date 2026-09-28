@@ -1,0 +1,59 @@
+spring:
+  application:
+    name: TrAIEngine
+
+  # ─── MongoDB ────────────────────────────────────────────────────────────────
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+
+  # ─── Cache ──────────────────────────────────────────────────────────────────
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000   # 10 minutes in milliseconds
+
+# ─── LangChain4j / Vertex AI Gemini ─────────────────────────────────────────
+langchain4j:
+  vertex-ai:
+    gemini:
+      project: ${GEMINI_PROJECT_ID}
+      location: ${GEMINI_LOCATION:us-central1}
+      model-name: gemini-1.5-pro
+
+# ─── xAI Grok ────────────────────────────────────────────────────────────────
+xai:
+  api-key: ${XAI_API_KEY}
+
+# ─── JWT ─────────────────────────────────────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+# ─── Server ──────────────────────────────────────────────────────────────────
+server:
+  port: 8080
+  compression:
+    enabled: true
+  error:
+    include-message: never
+    include-stacktrace: never
+
+# ─── Actuator ────────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+# ─── Logging ─────────────────────────────────────────────────────────────────
+logging:
+  level:
+    root: WARN
+    com.trai: INFO

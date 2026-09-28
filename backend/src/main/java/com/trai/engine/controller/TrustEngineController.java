@@ -66,6 +66,16 @@ public class TrustEngineController {
     }
 
     /**
+     * Algorithmic market impact prediction for verified events.
+     */
+    @PostMapping("/analytics/market-impact")
+    public ResponseEntity<Map<String, Object>> predictMarketImpact(@RequestBody Map<String, String> body) {
+        String summary = body.getOrDefault("eventSummary", "");
+        Map<String, Object> result = trustVerificationService.predictMarketImpact(summary);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
      * Platform status & engine capability diagnostic.
      */
     @GetMapping("/trust/status")
@@ -79,7 +89,9 @@ public class TrustEngineController {
                         "AI Hallucination & Glitch Detection",
                         "Multi-source Consensus Verification",
                         "Propaganda & Double-Standard Stripping",
-                        "Source Trust Scoring Index"
+                        "Source Trust Scoring Index",
+                        "B2B Webhook Gateway",
+                        "Predictive Market Impact Analytics"
                 ),
                 "supportedModels", List.of("xAI Grok-2", "Google Vertex AI Gemini 1.5 Pro")
         ));
