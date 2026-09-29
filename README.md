@@ -115,7 +115,7 @@
 ## 3. Project Structure
 
 ```
-Anti-gravity AI/                         ← Git repository root
+TrAI/                         ← Git repository root
 │
 ├── .env.example                         ← All required environment variables (template)
 ├── .gitignore

@@ -17,41 +17,40 @@
 
 ## 1. BACKEND — Spring Boot Core
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| Spring Boot project scaffold | ✅ | `backend/` with Gradle, running on port 8080 (Java 21) |
-| MongoDB connection | ✅ | `application.yml` configured, `MongoRepository` used |
-| Redis connection | ✅ | Docker Compose includes Redis; `application.yml` configured |
-| `TrustEngineController` (REST) | ✅ | Exposes `/api/v1/trust/*`, `/api/v1/live/*`, `/api/v1/analytics/*`, `/api/v1/trust/status`, `/api/v1/trust/kill-switch` |
-| `TrustVerificationService` | ✅ | Orchestrates all 3 AI engines, sanitizer, guardrails, kill switch, caching, and audit logging |
-| `AntiPropagandaEngine` (LangChain4j) | ✅ | Interface wired via `AiConfig` |
-| `LiveFactCheckEngine` (LangChain4j) | ✅ | Interface wired via `AiConfig` |
-| `AiGlitchVerifierEngine` (LangChain4j) | ✅ | Interface wired via `AiConfig` |
-| `NewsScrapingScheduler` | ✅ | Jsoup-based, runs every 10 min |
-| MongoDB domain models | ✅ | `NormalizedNews`, `SourceTrustScore`, `InsiderInfo`, `VerifiedClaim`, `TraiUser`, `WebhookRequest`, `WebhookPartner`, `AuditLog`, `PlatformAlert` |
+| Component | Status | Notes                                                                                                                                                                                   |
+|-----------|--------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Spring Boot project scaffold | ✅ | `backend/` with Gradle, running on port 8080 (Java 21)                                                                                                                                  |
+| MongoDB connection | ✅ | `application.yml` configured, `MongoRepository` used                                                                                                                                    |
+| Redis connection | ✅ | Docker Compose includes Redis; `application.yml` configured                                                                                                                             |
+| `TrustEngineController` (REST) | ✅ | Exposes `/api/v1/trust/*`, `/api/v1/live/*`, `/api/v1/analytics/*`, `/api/v1/trust/status`, `/api/v1/trust/kill-switch`                                                                 |
+| `TrustVerificationService` | ✅ | Orchestrates all 3 AI engines, sanitizer, guardrails, kill switch, caching, and audit logging                                                                                           |
+| `AntiPropagandaEngine` (LangChain4j) | ✅ | Interface wired via `AiConfig`                                                                                                                                                          |
+| `LiveFactCheckEngine` (LangChain4j) | ✅ | Interface wired via `AiConfig`                                                                                                                                                          |
+| `AiGlitchVerifierEngine` (LangChain4j) | ✅ | Interface wired via `AiConfig`                                                                                                                                                          |
+| `NewsScrapingScheduler` | ✅ | Jsoup-based, runs every 10 min                                                                                                                                                          |
+| MongoDB domain models | ✅ | `NormalizedNews`, `SourceTrustScore`, `InsiderInfo`, `VerifiedClaim`, `TraiUser`, `WebhookRequest`, `WebhookPartner`, `AuditLog`, `PlatformAlert`                                       |
 | MongoDB repositories | ✅ | `NormalizedNewsRepository`, `SourceTrustScoreRepository`, `TraiUserRepository`, `WebhookRequestRepository`, `WebhookPartnerRepository`, `AuditLogRepository`, `PlatformAlertRepository` |
-| DTOs | ✅ | `LiveStatementRequest`, `AiGlitchCheckRequest`, `NewsVerificationRequest`, `LoginRequest`, `RegisterRequest` |
-| **Package naming** | ✅ | Renamed from `com.antigravity.engine` to `com.trai.engine` across all classes |
-| **API Gateway microservice** | ✅ | Yandex API Gateway spec created (`yandex-api-gateway.yaml`) + CORS configured |
-| **auth-service microservice** | ✅ | Implemented: `SecurityConfig`, `JwtUtil`, `JwtAuthFilter`, `AuthController`, `TraiUser`, `TraiUserRepository` |
-| **User registration / login** | ✅ | Implemented: `POST /api/v1/auth/register` and `POST /api/v1/auth/login` returning JWT tokens |
-| **Webhook catcher service** | ✅ | Implemented: `POST /api/v1/webhook/ingest`, `GET /api/v1/webhook/status/{id}`, `POST /api/v1/webhook/register`, HMAC-SHA256 signature verification |
-| **Liquibase migrations** | ✅ | Implemented in `backend/src/main/resources/db/changelog/` (`001-initial-schema.sql`, `002-source-indices.sql`) |
-| **Internationalization (i18n)** | ✅ | Implemented: `messages.properties` (EN), `messages_ru.properties` (RU), `messages_hy.properties` (AM), and `I18nConfig` bean |
-| **Input sanitization / Security layer** | ✅ | Implemented: `InputSanitizerService` with HTML/script stripping, SQL injection detection, prompt injection detection, PII masking (email/card) |
-| **Kill switch / Human-in-the-loop** | ✅ | Implemented: SentinelMind `/api/v1/trust/kill-switch` toggle API + emergency UI banner |
-| **Redis caching layer** | ✅ | Implemented: `@EnableCaching`, `RedisConfig`, and `@Cacheable` on news normalization, source trust lookups, analytics, and translation |
-| **Output guardrails** | ✅ | Implemented: `OutputGuardrailsService` with risk thresholding and automated fallback safe payloads |
-| **Audit log / Report generation** | ✅ | Implemented: `AuditLogService`, `AuditLogRepository`, and `GET /api/v1/audit/logs` |
-| **Rate limiting** | ✅ | Implemented: `RateLimitingFilter` (Bucket4j in-memory token-bucket filter) |
-| **Elasticsearch integration** | ✅ | Implemented: `NewsSearchService` full-text archive indexing & `GET /api/v1/search/news` |
-| **DeepL / Translation pipeline** | ✅ | Implemented: `TranslationService` supporting EN, RU, and HY + `POST /api/v1/translate` |
-| **Trust score recalculation scheduler** | ✅ | Implemented: `TrustScoreRecalculationScheduler` daily scheduled job |
-| **Predictive analytics service** | ✅ | Implemented: `PredictiveAnalyticsService`, `MarketImpactEngine`, endpoint `POST /api/v1/analytics/market-impact` |
-| **`application-prod.yml`** | ✅ | Created with Yandex Cloud & environment placeholders |
-| **Yandex Cloud / Docker deployment** | ✅ | `backend/Dockerfile` and `docker-compose.yml` updated with multi-stage build |
-| **Unit tests** | ✅ | Implemented: `TrustVerificationServiceTest`, `InputSanitizerServiceTest`, `WebhookServiceTest`, `TranslationServiceTest`, `NewsSearchServiceTest` (100% passing) |
-| **CORS configuration** | ✅ | Configured with `@CrossOrigin(origins = "*")` and `SecurityConfig` `CorsConfigurationSource` |
+| DTOs | ✅ | `LiveStatementRequest`, `AiGlitchCheckRequest`, `NewsVerificationRequest`, `LoginRequest`, `RegisterRequest`                                                                            |
+| **API Gateway microservice** | ✅ | Yandex API Gateway spec created (`yandex-api-gateway.yaml`) + CORS configured                                                                                                           |
+| **auth-service microservice** | ✅ | Implemented: `SecurityConfig`, `JwtUtil`, `JwtAuthFilter`, `AuthController`, `TraiUser`, `TraiUserRepository`                                                                           |
+| **User registration / login** | ✅ | Implemented: `POST /api/v1/auth/register` and `POST /api/v1/auth/login` returning JWT tokens                                                                                            |
+| **Webhook catcher service** | ✅ | Implemented: `POST /api/v1/webhook/ingest`, `GET /api/v1/webhook/status/{id}`, `POST /api/v1/webhook/register`, HMAC-SHA256 signature verification                                      |
+| **Liquibase migrations** | ✅ | Implemented in `backend/src/main/resources/db/changelog/` (`001-initial-schema.sql`, `002-source-indices.sql`)                                                                          |
+| **Internationalization (i18n)** | ✅ | Implemented: `messages.properties` (EN), `messages_ru.properties` (RU), `messages_hy.properties` (AM), and `I18nConfig` bean                                                            |
+| **Input sanitization / Security layer** | ✅ | Implemented: `InputSanitizerService` with HTML/script stripping, SQL injection detection, prompt injection detection, PII masking (email/card)                                          |
+| **Kill switch / Human-in-the-loop** | ✅ | Implemented: SentinelMind `/api/v1/trust/kill-switch` toggle API + emergency UI banner                                                                                                  |
+| **Redis caching layer** | ✅ | Implemented: `@EnableCaching`, `RedisConfig`, and `@Cacheable` on news normalization, source trust lookups, analytics, and translation                                                  |
+| **Output guardrails** | ✅ | Implemented: `OutputGuardrailsService` with risk thresholding and automated fallback safe payloads                                                                                      |
+| **Audit log / Report generation** | ✅ | Implemented: `AuditLogService`, `AuditLogRepository`, and `GET /api/v1/audit/logs`                                                                                                      |
+| **Rate limiting** | ✅ | Implemented: `RateLimitingFilter` (Bucket4j in-memory token-bucket filter)                                                                                                              |
+| **Elasticsearch integration** | ✅ | Implemented: `NewsSearchService` full-text archive indexing & `GET /api/v1/search/news`                                                                                                 |
+| **DeepL / Translation pipeline** | ✅ | Implemented: `TranslationService` supporting EN, RU, and HY + `POST /api/v1/translate`                                                                                                  |
+| **Trust score recalculation scheduler** | ✅ | Implemented: `TrustScoreRecalculationScheduler` daily scheduled job                                                                                                                     |
+| **Predictive analytics service** | ✅ | Implemented: `PredictiveAnalyticsService`, `MarketImpactEngine`, endpoint `POST /api/v1/analytics/market-impact`                                                                        |
+| **`application-prod.yml`** | ✅ | Created with Yandex Cloud & environment placeholders                                                                                                                                    |
+| **Yandex Cloud / Docker deployment** | ✅ | `backend/Dockerfile` and `docker-compose.yml` updated with multi-stage build                                                                                                            |
+| **Unit tests** | ✅ | Implemented: `TrustVerificationServiceTest`, `InputSanitizerServiceTest`, `WebhookServiceTest`, `TranslationServiceTest`, `NewsSearchServiceTest` (100% passing)                        |
+| **CORS configuration** | ✅ | Configured with `@CrossOrigin(origins = "*")` and `SecurityConfig` `CorsConfigurationSource`                                                                                            |
 
 ---
 

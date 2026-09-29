@@ -75,12 +75,12 @@ Install the following before proceeding:
 ## 3. PROJECT STRUCTURE
 
 ```
-Anti-gravity AI/              ← root project directory
+TrAI/              ← root project directory
 │
 ├── backend/                  ← Spring Boot application
 │   ├── src/
 │   │   ├── main/
-│   │   │   ├── java/com/antigravity/engine/    ← Java source (rename to com/trai/engine)
+│   │   │   ├── java/com/trai/engine/    ← Java source (rename to com/trai/engine)
 │   │   │   │   ├── ai/                         ← LangChain4j AI engine interfaces
 │   │   │   │   │   ├── AntiPropagandaEngine.java
 │   │   │   │   │   ├── LiveFactCheckEngine.java
@@ -133,7 +133,7 @@ This is the fastest way to see the app working. **No API keys, no Java, no Docke
 
 **Step 1:** Open the frontend folder:
 ```
-Anti-gravity AI/frontend/
+TrAI/frontend/
 ```
 
 **Step 2:** Open `index.html` directly in your browser.
@@ -856,7 +856,7 @@ yc serverless api-gateway create \
 
 ## 14. GIT SETUP AND PUSH TO GITHUB
 
-Run these commands from the project root directory (`Anti-gravity AI/`):
+Run these commands from the project root directory (`TrAI/`):
 
 ```bash
 # Step 1: Initialize git repository
