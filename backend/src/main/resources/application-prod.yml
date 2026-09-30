@@ -2,7 +2,7 @@ spring:
   application:
     name: TrAIEngine
 
-  # ─── MongoDB ────────────────────────────────────────────────────────────────
+  # ─── MongoDB (MongoDB Atlas or self-hosted on Cloud Run) ───────────────────
   data:
     mongodb:
       uri: ${MONGODB_URI}
@@ -16,17 +16,37 @@ spring:
     redis:
       time-to-live: 600000   # 10 minutes in milliseconds
 
-# ─── LangChain4j / Vertex AI Gemini ─────────────────────────────────────────
+# ─── Google Vertex AI — Gemini 2.0 Flash ─────────────────────────────────────
 langchain4j:
   vertex-ai:
     gemini:
       project: ${GEMINI_PROJECT_ID}
       location: ${GEMINI_LOCATION:us-central1}
-      model-name: gemini-1.5-pro
+      model-name: gemini-2.0-flash-exp
 
-# ─── xAI Grok ────────────────────────────────────────────────────────────────
+# ─── xAI Grok-2 (pinned version) ─────────────────────────────────────────────
 xai:
   api-key: ${XAI_API_KEY}
+  model: grok-2-1212
+
+# ─── OpenAI ChatGPT-4o ────────────────────────────────────────────────────────
+openai:
+  api-key: ${OPENAI_API_KEY}
+  model: gpt-4o
+
+# ─── Twitter/X API v2 ────────────────────────────────────────────────────────
+twitter:
+  bearer-token: ${TWITTER_BEARER_TOKEN}
+
+# ─── Google Cloud Storage ─────────────────────────────────────────────────────
+gcs:
+  bucket-name: ${GCS_BUCKET_NAME:trai-media}
+  project-id: ${GCP_PROJECT_ID}
+
+# ─── Firebase Push Notifications ─────────────────────────────────────────────
+firebase:
+  credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
+  server-key: ${FCM_SERVER_KEY:}
 
 # ─── JWT ─────────────────────────────────────────────────────────────────────
 jwt:

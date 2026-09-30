@@ -1,7 +1,7 @@
 name: trai_mobile
 description: "TrAI Mobile App — Real-Time Truth Infrastructure & Fact-Checking on iOS and Android."
 publish_to: "none"
-version: 1.0.0+1
+version: 2.0.0+2
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -9,10 +9,32 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # HTTP client
   http: ^1.2.0
+
+  # Internationalization
   intl: ^0.19.0
+
+  # State management
   provider: ^6.1.1
+
+  # Local storage (country preference, JWT token, etc.)
   shared_preferences: ^2.2.2
+
+  # Push notifications (FCM — works for both Android and iOS via APNs bridge)
+  firebase_core: ^3.3.0
+  firebase_messaging: ^15.1.0
+  flutter_local_notifications: ^17.2.1
+
+  # Country picker
+  country_picker: ^2.0.26
+
+  # UI extras
+  flutter_spinkit: ^5.2.1
+  cached_network_image: ^3.3.1
+  timeago: ^3.6.1
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:
@@ -21,3 +43,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icons/

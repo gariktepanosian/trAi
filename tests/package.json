@@ -1,0 +1,21 @@
+{
+  "name": "trai-playwright-tests",
+  "description": "TrAI Platform — Playwright E2E & API Tests",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test tests/api/ --project='API Tests'",
+    "test:ui": "playwright test tests/ui/ --project='UI Tests (Chromium)'",
+    "test:health": "playwright test tests/api/health.spec.ts",
+    "test:auth": "playwright test tests/api/auth.spec.ts",
+    "test:ai": "playwright test tests/api/ai-*.spec.ts",
+    "report": "playwright show-report",
+    "install-browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  }
+}

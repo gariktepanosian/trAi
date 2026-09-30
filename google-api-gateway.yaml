@@ -1,0 +1,92 @@
+openapi: 3.0.0
+info:
+  title: TrAI API Gateway (Google Cloud)
+  version: 2.0.0
+servers:
+  - url: https://trai-gateway-HASH-uc.a.run.app
+
+x-google-backend:
+  address: https://${BACKEND_SERVICE_URL}
+  path_translation: APPEND_PATH_TO_ADDRESS
+
+paths:
+  /api/v1/{proxy}:
+    get:
+      summary: Proxy GET requests to TrAI backend
+      operationId: proxyGet
+      parameters:
+        - in: path
+          name: proxy
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful response
+      x-google-backend:
+        address: https://${BACKEND_SERVICE_URL}/api/v1/{proxy}
+        path_translation: CONSTANT_ADDRESS
+    post:
+      summary: Proxy POST requests to TrAI backend
+      operationId: proxyPost
+      parameters:
+        - in: path
+          name: proxy
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Successful response
+      x-google-backend:
+        address: https://${BACKEND_SERVICE_URL}/api/v1/{proxy}
+        path_translation: CONSTANT_ADDRESS
+    put:
+      summary: Proxy PUT requests
+      operationId: proxyPut
+      parameters:
+        - in: path
+          name: proxy
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Successful response
+      x-google-backend:
+        address: https://${BACKEND_SERVICE_URL}/api/v1/{proxy}
+        path_translation: CONSTANT_ADDRESS
+    delete:
+      summary: Proxy DELETE requests
+      operationId: proxyDelete
+      parameters:
+        - in: path
+          name: proxy
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful response
+      x-google-backend:
+        address: https://${BACKEND_SERVICE_URL}/api/v1/{proxy}
+        path_translation: CONSTANT_ADDRESS
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

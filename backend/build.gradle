@@ -49,8 +49,21 @@ dependencies {
 	implementation 'dev.langchain4j:langchain4j-vertex-ai-gemini:0.29.1'
 	implementation 'dev.langchain4j:langchain4j-open-ai:0.29.1'
 
+	// ─── Google Cloud Storage (replaces Yandex Object Storage) ────────────────
+	implementation 'com.google.cloud:google-cloud-storage:2.40.1'
+
+	// ─── Firebase Admin SDK (FCM push notifications) ───────────────────────────
+	implementation 'com.google.firebase:firebase-admin:9.3.0'
+
+	// ─── Twitter API v2 (real-time tweet scraping) ─────────────────────────────
+	// Uses plain OkHttp + Jackson — no heavyweight SDK needed
+	implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
 	// ─── Web Scraping ──────────────────────────────────────────────────────────
 	implementation 'org.jsoup:jsoup:1.17.2'
+
+	// ─── Async / Concurrency utilities ─────────────────────────────────────────
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
 	// ─── Test ──────────────────────────────────────────────────────────────────
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

@@ -10,4 +10,6 @@ import java.util.List;
 public interface NormalizedNewsRepository extends MongoRepository<NormalizedNews, String> {
     List<NormalizedNews> findBySearchTagsContaining(String tag);
     List<NormalizedNews> findByEventId(String eventId);
+    List<NormalizedNews> findTop20ByOrderByCreatedAtDesc();
+    List<NormalizedNews> findBySourceNameContainingIgnoreCaseOrderByCreatedAtDesc(String sourceName);
 }

@@ -1,8 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:provider/provider.dart';
 import 'screens/home_screen.dart';
+import 'services/notification_service.dart';
+import 'services/country_service.dart';
 
-void main() {
-  runApp(const TrAiApp());
+// Background message handler — must be top-level function
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  await NotificationService.showLocalNotification(message);
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase (requires google-services.json on Android,
+  // GoogleService-Info.plist on iOS — both from Firebase Console)
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    // Firebase not configured yet — app runs in demo mode
+    debugPrint('[Firebase] Not initialized: $e');
+  }
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CountryService()),
+      ],
+      child: const TrAiApp(),
+    ),
+  );
 }
 
 class TrAiApp extends StatelessWidget {
@@ -33,6 +65,27 @@ class TrAiApp extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             side: const BorderSide(color: Colors.white10),
           ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFF1A2236),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Colors.white24),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Colors.white24),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFF06B6D4)),
+          ),
+          labelStyle: const TextStyle(color: Colors.white54),
+        ),
+        chipTheme: ChipThemeData(
+          backgroundColor: const Color(0xFF1A2236),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         fontFamily: 'Roboto',
       ),

@@ -12,6 +12,15 @@ public class NormalizedNews {
     private String id;
     private String eventId;
     private String normalizedTitle;
+    // Scraper-populated fields
+    private String title;
+    private String sourceName;
+    private String sourceUrl;
+    private String rawText;
+    private String normalizedText;
+    private double trustScore;
+    private double propagandaScore;
+    // AI-populated fields
     private List<String> verifiedFacts;
     private List<VerifiedClaim> unverifiedClaims;
     private List<InsiderInfo> insiderInfo;
@@ -32,6 +41,27 @@ public class NormalizedNews {
 
     public String getNormalizedTitle() { return normalizedTitle; }
     public void setNormalizedTitle(String normalizedTitle) { this.normalizedTitle = normalizedTitle; }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
+    public String getSourceName() { return sourceName; }
+    public void setSourceName(String sourceName) { this.sourceName = sourceName; }
+
+    public String getSourceUrl() { return sourceUrl; }
+    public void setSourceUrl(String sourceUrl) { this.sourceUrl = sourceUrl; }
+
+    public String getRawText() { return rawText; }
+    public void setRawText(String rawText) { this.rawText = rawText; }
+
+    public String getNormalizedText() { return normalizedText; }
+    public void setNormalizedText(String normalizedText) { this.normalizedText = normalizedText; }
+
+    public double getTrustScore() { return trustScore; }
+    public void setTrustScore(double trustScore) { this.trustScore = trustScore; }
+
+    public double getPropagandaScore() { return propagandaScore; }
+    public void setPropagandaScore(double propagandaScore) { this.propagandaScore = propagandaScore; }
 
     public List<String> getVerifiedFacts() { return verifiedFacts; }
     public void setVerifiedFacts(List<String> verifiedFacts) { this.verifiedFacts = verifiedFacts; }
