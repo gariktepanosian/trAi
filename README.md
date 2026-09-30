@@ -91,8 +91,8 @@
 │ LangChain4j │  │  MongoDB 7.0 │   │   Redis 7.2       │
 │ AI Engines  │  │  Documents + │   │  Cache (10 min    │
 │ ─────────── │  │  Users +     │   │  TTL) for news,   │
-│ xAI Grok-2  │  │  Audit Logs +│   │  trust scores,    │
-│ Gemini 1.5  │  │  Webhooks +  │   │  analytics,       │
+│ xAI Grok-4.7│  │  Audit Logs +│   │  trust scores,    │
+│ Gemini 2.5  │  │  Webhooks +  │   │  analytics,       │
 │             │  │  Alerts      │   │  translations     │
 └─────────────┘  └──────────────┘   └──────────────────┘
 ```

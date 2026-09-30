@@ -3,18 +3,39 @@ spring:
     name: TrAIEngine
   data:
     mongodb:
-      uri: mongodb://localhost:27017/trai
+      uri: ${MONGODB_URI:mongodb://localhost:27017/trai}
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
+# ─── Google Vertex AI — Gemini 2.5 Flash ─────────────────────────────────────
 langchain4j:
   vertex-ai:
     gemini:
-      # Use an environment variable for security
       project: ${GEMINI_PROJECT_ID:your-project-id}
       location: ${GEMINI_LOCATION:us-central1}
-      model-name: gemini-1.5-pro
+      model-name: gemini-2.5-flash
 
+# ─── xAI Grok (pinned version) ────────────────────────────────────────────────
 xai:
   api-key: ${XAI_API_KEY:your-xai-api-key}
+  model: grok-4.7
+
+# ─── OpenAI ChatGPT-4o ────────────────────────────────────────────────────────
+openai:
+  api-key: ${OPENAI_API_KEY:your-openai-api-key}
+  model: gpt-4o
+
+# ─── X (formerly Twitter) API v2 ─────────────────────────────────────────────
+twitter:
+  bearer-token: ${TWITTER_BEARER_TOKEN:your-twitter-bearer-token}
+
+# ─── Google Cloud Storage ─────────────────────────────────────────────────────
+gcs:
+  bucket-name: ${GCS_BUCKET_NAME:trai-media}
+  project-id: ${GCS_PROJECT_ID:your-project-id}
+
+# ─── Firebase Push Notifications ─────────────────────────────────────────────
+firebase:
+  credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
+  server-key: ${FCM_SERVER_KEY:}

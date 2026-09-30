@@ -69,10 +69,10 @@ TrAI is an **algorithmic truth gateway** and **enterprise information firewall**
                           │  │ (injection shield + PII) │   │
                           │  └──────────┬───────────────┘   │
                           │             ▼                    │
-                          │  ┌──────────────────────────┐   │
-                          │  │  AI Engine (xAI Grok-2)  │   │
-                          │  │  + Gemini 1.5 Pro backup │   │
-                          │  └──────────┬───────────────┘   │
+                           │  ┌──────────────────────────┐   │
+                           │  │  AI Engine (xAI Grok-4.7)│   │
+                           │  │  + Gemini 2.5 Flash backup│   │
+                           │  └──────────┬───────────────┘   │
                           │             ▼                    │
                           │  ┌──────────────────────────┐   │
                           │  │ OutputGuardrailsService  │   │
@@ -209,7 +209,7 @@ When a verified event is confirmed by TrAI, the **Market Impact Engine** generat
 Verified Event: "US Federal Reserve raised interest rates by 50bps"
                                 │
                                 ▼
-                 [ MarketImpactEngine (Gemini 1.5 Pro) ]
+                 [ MarketImpactEngine (Grok-4.7 / Gemini 2.5 Flash) ]
                  [ Quantitative Geopolitical Analyst AI ]
                                 │
         ┌───────────┬───────────┼───────────┬───────────┐
@@ -341,8 +341,8 @@ Alerts are severity-classified (`CRITICAL / HIGH / INFO`), stored in MongoDB, an
 | Layer | Technology | Why This Choice |
 |---|---|---|
 | **Backend Framework** | Spring Boot 4.0.3 / Java 21 LTS | Battle-tested, low-latency, enterprise standard |
-| **Primary AI Engine** | xAI Grok-2 (`grok-2-latest`) | State-of-the-art factual reasoning, OpenAI-compatible API |
-| **Secondary AI Engine** | Google Cloud Vertex AI Gemini 1.5 Pro | Consensus validation, market analysis, auto-failover |
+| **Primary AI Engine** | xAI Grok-4.7 (`grok-4.7`) | State-of-the-art factual reasoning, OpenAI-compatible API |
+| **Secondary AI Engine** | Google Cloud Vertex AI Gemini 2.5 Flash | Consensus validation, market analysis, auto-failover |
 | **AI Orchestration** | LangChain4j 0.29.1 | Production-ready Java-native AI framework |
 | **Document Store** | MongoDB 7.0 | Flexible document model for verified claims + audit logs |
 | **Cache Layer** | Redis 7.2 | Microsecond-latency trust score and analytics caching |
@@ -358,7 +358,7 @@ Alerts are severity-classified (`CRITICAL / HIGH / INFO`), stored in MongoDB, an
 ### Reliability Features:
 - **Built-in heuristic fallback engine** — keyword-based verdicts when AI is unavailable (zero dependency on external APIs)
 - **Redis caching** — repeated queries served in microseconds, no AI call needed
-- **Dual AI models** — Grok-2 primary, Gemini 1.5 Pro as automatic fallback
+- **Dual AI models** — Grok-4.7 primary, Gemini 2.5 Flash as automatic fallback
 - **Embedded MongoDB** for tests — CI pipeline runs without any external services
 
 ---
@@ -399,7 +399,7 @@ Alerts are severity-classified (`CRITICAL / HIGH / INFO`), stored in MongoDB, an
 **Step 1 — Open the Dashboard**
 ```
 ▶ Open frontend/index.html in browser (or http://localhost:3000 if Docker-running)
-▶ Show the status badge: "Backend: OPERATIONAL • Grok-2 + Gemini 1.5"
+▶ Show the status badge: "Backend: OPERATIONAL • Grok-4.7 + Gemini 2.5 Flash"
 ▶ Walk the client through the 9 tabs briefly — explain the breadth
 ```
 
